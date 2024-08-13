@@ -7,11 +7,11 @@ $ git clone https://github.com/albertmjy/ExpediaDemo.git
 python3 + flask
 
 ## setup
-$ sudo apt install python3
-$ sudo apt install flask
-$ cd /demo/dir
-$ python3 -m venv venv
-$ source venv/bin/activate
+$ sudo apt install python3 \
+$ sudo apt install flask \
+$ cd /demo/dir \
+$ python3 -m venv venv \
+$ source venv/bin/activate \
 $ flask run
 
 
