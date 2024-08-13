@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Search Results</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .filter-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        .results-section ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .results-section li {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .filter-group {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .filter-group div {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-right: 30px;
+            margin-bottom: 15px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .filter-group input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        .results-section img{
+            float: left;
+            margin-right: 15px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+{% raw %}
+<body>
+    <div id="app" class="container">
+        <h1>Hotel Search Results - {{ searchParams.destination }}</h1>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <h2>Filters</h2>
+            <div class="filter-group">
+                <label>Star Rating</label><br />
+                <div v-for="rating in [5, 4, 3, 2, 1]" :key="rating">
+                    <input type="checkbox" :value="rating" v-model="selectedRatings">
+                    {{ rating }} Star
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label>Amenities</label><br />
+                <div v-for="amenity in amenitiesList" :key="amenity">
+                    <input type="checkbox" :value="amenity" v-model="selectedAmenities">
+                    {{ amenity }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section">
+            <ul>
+                <li v-for="result in filteredResults" :key="result.id" @click="selectHotle(result.prop_id, result.name)">
+                    <img :src="result.image" alt="Room Image">
+                    <div>
+                        <h3>{{ result.name }}</h3>
+
+                        <p>City: {{ result.city }}</p>
+                        <p>Address: {{ result.description }}</p>
+                        <!--<p>Address: {{ result.address }}</p>
+
+                        -->
+                        <p>Price: {{ result.price }}</p>
+                        <p>Rating: {{ result.rating }} Star</p>
+                        <!--
+                        <p>Reviews: {{ result.reviews }} </p>
+                        -->
+                        <p>Amenities: {{ result.amenities.join(', ') }}</p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    results: [
+                        /*{ id: 1, name: 'Hotel Grand', price: '$120 per night', rating: 5, amenities: ['WiFi', 'Pool', 'Gym'] },
+                        { id: 2, name: 'Luxury Suites', price: '$250 per night', rating: 4, amenities: ['WiFi', 'Spa'] },
+                        { id: 3, name: 'Comfort Inn', price: '$80 per night', rating: 3, amenities: ['WiFi', 'Parking'] },
+                        { id: 4, name: 'Budget Stay', price: '$60 per night', rating: 3, amenities: ['Parking'] },
+                        { id: 5, name: 'City Lights Hotel', price: '$150 per night', rating: 4, amenities: ['WiFi', 'Gym'] } */
+                    ],
+                    selectedRatings: [],
+                    selectedAmenities: [],
+                    amenitiesList: [],
+
+                    searchParams: {
+                        destination: '',
+                        checkin: '',
+                        checkout: '',
+                        occupancy: 1,
+                        regionId: '',
+                        c_code:''
+                    }
+                };
+            },
+            computed: {
+                filteredResults() {
+                    return this.results.filter(result => {
+                        const ratingMatch = this.selectedRatings.length ? this.selectedRatings.includes(result.rating) : true;
+                        const amenitiesMatch = this.selectedAmenities.length 
+                            ? this.selectedAmenities.every(amenity => result.amenities.includes(amenity))
+                            : true;
+                        return ratingMatch && amenitiesMatch;
+                    });
+                }
+            },
+            mounted() {
+                // 解析查询字符串
+                const params = new URLSearchParams(window.location.search);
+                this.searchParams.destination = params.get('destination');
+                this.searchParams.checkin = params.get('checkin');
+                this.searchParams.checkout = params.get('checkout');
+                this.searchParams.occupancy = params.get('occupancy');
+                this.searchParams.regionId = params.get('regionId');
+
+                let res = this.request('GET', 'http://127.0.0.1:5000/data?'+params.toString())
+
+
+            },
+            methods:{
+                selectHotle(prop_id, name){
+                    const params = new URLSearchParams(window.location.search);
+                    params.append('prop_id', prop_id)
+                    params.append('hotel_name', name)
+                    params.append('c_code', this.c_code)
+                    window.location.href = `/rooms?`+params.toString();
+                },
+                update_content(res_data, occupancy){
+                    data = res_data['content_data']
+                    shopping_data = res_data['shopping_data']
+                    i = 0
+                    for (const pid in data) {
+                        let obj = data[pid]
+                        console.log(data[pid])
+                        let amenities = []
+                        for (const am_key in obj['amenities']) {
+                            amenities.push(obj['amenities'][am_key]['name'])
+                            if (amenities.length > 6)
+                                break
+                        }
+
+                        prop_id = pid
+                        price = 'Not available', currency = 'Not available'
+                        if (shopping_data[i]) {
+                            price = shopping_data[i]['rooms'][0]['rates'][0]['occupancy_pricing'][occupancy]['nightly'][0][1]['value']
+                            currency = shopping_data[i]['rooms'][0]['rates'][0]['occupancy_pricing'][occupancy]['nightly'][0][1]['currency']
+                        }
+                        address = obj['address']['line_1']
+                        city = obj['address']['city']
+                        //reviews = obj['ratings']['guest']['count']
+                        rank = obj['rank']
+                        rating = parseInt(obj['ratings']['property']['rating'])
+                        description = obj['descriptions']['location']
+                        //fees = obj['fees']['optional']
+                        image = obj['images'][0]['links']['350px']['href']
+
+                        result = { id: obj['property_id'], name: obj['name'], price: price+' '+currency, rating: rating,
+                            address: address, city: city,  amenities: amenities , prop_id:prop_id, image:image,
+                            description:description}
+                        this.results.push(result)
+
+                        this.amenitiesList = this.amenitiesList.concat(amenities)
+                        console.log(this.amenitiesList, amenities)
+                        i++
+                    }
+                    this.amenitiesList = Array.from(new Set(this.amenitiesList))
+                    console.log(this.results)
+
+                    this.c_code = res_data['c_code']
+                },
+                request(method, url, fn){
+
+                    // request
+                    fetch(url, {
+                        method: method,
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok ' + response.statusText);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Response Data:', data);
+                        const params = new URLSearchParams(window.location.search);
+                        this.update_content(data, params.get('occupancy'))
+
+                    })
+                    .catch(error => {
+                        console.error('Fetch error:', error);
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+{% endraw %}
+</html>

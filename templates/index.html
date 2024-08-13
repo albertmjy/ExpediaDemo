@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Search</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        .form-group button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .form-group button:hover {
+            background-color: #0056b3;
+        }
+        .results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+{% raw %}
+<body>
+    <div id="app" class="container">
+        <h1>Hotel Search</h1>
+        <div class="form-group">
+            <label for="destination">Destination</label>
+            <input type="text" id="destination" v-model="searchParams.destination" @input="updateHints" placeholder="Enter a city">
+            <ul v-if="hints.length">
+                <li v-for="hint in hints" :key="hint" @click="selectHint(hint)">{{ hint }}</li>
+            </ul>
+        </div>
+        <div class="form-group">
+            <label for="checkin">Check-in Date</label>
+            <input type="date" id="checkin" v-model="searchParams.checkin">
+        </div>
+        <div class="form-group">
+            <label for="checkout">Check-out Date</label>
+            <input type="date" id="checkout" v-model="searchParams.checkout">
+        </div>
+        <div class="form-group">
+            <label for="occupancy">Occupancy</label>
+            <select id="occupancy" v-model="searchParams.occupancy">
+                <option v-for="num in [1, 2]" :key="num" :value="num">{{ num }} guest(s)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <button @click="searchHotels">Search</button>
+        </div>
+        <div class="results" v-if="results.length">
+            <h2>Search Results</h2>
+            <ul>
+                <li v-for="result in results" :key="result.id">{{ result.name }} - {{ result.price }}</li>
+            </ul>
+        </div>
+        <div>New York | Paris | London | Sydney | Osaka | Tokyo</div>
+    </div>
+
+
+
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+
+
+                    searchParams: {
+                        destination: '',
+                        checkin: '',
+                        checkout: '',
+                        occupancy: 1
+                    },
+                    hints: [],
+                    results: [],
+
+                    region: {
+                        'New York': '2621', 
+                        'Paris': '2734', 
+                        'London': '2114', 
+                        'Sydney': '178312', 
+                        'Osaka': '179897',
+                        'Tokyo': '179900'
+                    }
+                };
+            },
+            methods: {
+                updateHints() {
+                    const destinations = ['New York', 'Paris', 'London', 'Sydney', 'Osaka', 'Tokyo'];
+                    
+                    // 2621, 2734, 2114, 178312, 179897, 179900
+
+                    if (this.searchParams.destination) {
+                        this.hints = destinations.filter(d => d.toLowerCase().includes(this.searchParams.destination.toLowerCase()));
+                    } else {
+                        this.hints = [];
+                    }
+                },
+                selectHint(hint) {
+                    this.searchParams.destination = hint;
+                    this.hints = [];
+                },
+                searchHotels() {
+
+                    // query paramenter
+                    const queryParams = new URLSearchParams({
+                        destination: this.searchParams.destination,
+                        checkin: this.searchParams.checkin,
+                        checkout: this.searchParams.checkout,
+                        occupancy: this.searchParams.occupancy,
+                        regionId: this.region[this.searchParams.destination]
+                    }).toString();
+
+                    // redirect
+                    window.location.href = `/list?${queryParams}`;
+                }
+
+            }
+        });
+    </script>
+</body>
+
+{% endraw %}
+</html>

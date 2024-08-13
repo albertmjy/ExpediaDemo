@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Rooms</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .room {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f4f4f4;
+        }
+        .room h2 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        .room p {
+            margin: 5px 0;
+        }
+        .room img {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+{% raw %}
+<body>
+    <div id="app" class="container">
+        <h1>Rooms at {{ hotelName }}</h1>
+        <div v-if="rooms.length<=0">
+            No Available Rooms for your condition. Please change to another hotel
+        </div>
+        <div v-for="room in rooms" :key="room.id" class="room">
+            <h2>{{ room.name }}</h2>
+            <img :src="room.image" alt="Room Image">
+            <p><strong>Price:</strong> {{ room.price }} per night</p>
+            <p><strong>Occupancy:</strong> {{ room.occupancy }} guests</p>
+            <p><strong>Amenities:</strong> {{ room.amenities.join(', ') }}</p>
+            <!-- <p><strong>Available Rooms:</strong> {{ room.available_rooms }}</p> -->
+            <p><strong>Description:</strong> <span v-html="room.description"></span></p>
+
+        </div>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    hotelName: '',
+                    rooms: [
+                        /*{
+                            id: 1,
+                            name: 'Deluxe Room',
+                            price: '$120',
+                            occupancy: 2,
+                            amenities: ['WiFi', 'Air Conditioning', 'Mini Bar'],
+                            description: 'A spacious room with a king-sized bed, en-suite bathroom, and city view.',
+                            image: 'https://via.placeholder.com/600x400' // 假设是房间的图片URL
+                        },
+                        {
+                            id: 2,
+                            name: 'Executive Suite',
+                            price: '$250',
+                            occupancy: 4,
+                            amenities: ['WiFi', 'Air Conditioning', 'Mini Bar', 'Living Area', 'Balcony'],
+                            description: 'A luxurious suite with a separate living area, balcony, and stunning city views.',
+                            image: 'https://via.placeholder.com/600x400'
+                        },
+                        {
+                            id: 3,
+                            name: 'Standard Room',
+                            price: '$80',
+                            occupancy: 2,
+                            amenities: ['WiFi', 'Air Conditioning'],
+                            description: 'A comfortable room with a queen-sized bed and essential amenities.',
+                            image: 'https://via.placeholder.com/600x400'
+                        }*/
+                    ]
+                };
+            },
+            mounted() {
+                // 解析查询字符串
+                const params = new URLSearchParams(window.location.search);
+                this.hotelName = params.get('hotel_name')
+
+
+                let res = this.request('GET', 'http://127.0.0.1:5000/shoppingData?'+params.toString())
+
+            },
+            methods:{
+                update_content(res_data, occupancy, prop_id){
+                    content_data = res_data['content_data']
+                    data = res_data['shopping_data']
+
+                    if (data.length>0){
+                        rooms = data[0]['rooms']
+                        for (const i in rooms) {
+                            let room_name = rooms[i]['room_name']
+                            let room_rate = rooms[i]['rates'][0]
+
+                            let amenities = []
+                            for (const am_key in room_rate['amenities']) {
+                                amenities.push(room_rate['amenities'][am_key]['name'])
+                            }
+
+                            let available_rooms = room_rate['available_rooms']
+                            let occupancy_price = room_rate['occupancy_pricing'][occupancy]['nightly'][0][1]['value']
+                            let currency = room_rate['occupancy_pricing'][occupancy]['nightly'][0][1]['currency']
+
+                            //address = obj['address']['line_1']
+                            //city = obj['address']['city']
+                            //reviews = obj['ratings']['guest']['count']
+                            //rating = parseInt(obj['ratings']['property']['rating'])
+
+                            room = { id: i, name: room_name, price: occupancy_price+' '+currency, amenities: amenities ,
+                                available_rooms: available_rooms, occupancy: occupancy,
+                                image:'https://www.thespruce.com/thmb/2_Q52GK3rayV1wnqm6vyBvgI3Ew=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/put-together-a-perfect-guest-room-1976987-hero-223e3e8f697e4b13b62ad4fe898d492d.jpg'}
+                            this.rooms.push(room)
+                        }
+                    }
+
+                    rooms = content_data[prop_id]['rooms']
+                    for (const id in rooms) {
+                        let name = rooms[id]['name']
+                        let description = rooms[id]['descriptions']['overview']
+                        let occupa = rooms[id]['occupancy']['max_allowed']
+                        let img = rooms[id]['images'][0]['links']['350px']['href']
+
+                        let amenities = []
+                        for (const am_key in rooms[id]['amenities']) {
+                            amenities.push(rooms[id]['amenities'][am_key]['name'])
+                            if (amenities.length>6)
+                                break
+                        }
+                        room = { id: id, name: name, amenities: amenities , description: description,
+                            occupancy: occupa, image:img}
+                        this.rooms.push(room)
+
+                    }
+                    console.log(this.rooms)
+                },
+                request(method, url, fn){
+
+                    // 发送GET请求
+                    fetch(url, {
+                        method: method,
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok ' + response.statusText);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Response Data:', data);
+                        const params = new URLSearchParams(window.location.search);
+                        this.update_content(data, params.get('occupancy'), params.get('prop_id'))
+
+                    })
+                    .catch(error => {
+                        console.error('Fetch error:', error);
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+{% endraw %}
+
+</html>
