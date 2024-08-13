@@ -107,10 +107,8 @@
                 const params = new URLSearchParams(window.location.search);
                 this.hotelName = params.get('hotel_name')
 
-                let url = location.protocol + '//' + location.host
 
-
-                let res = this.request('GET', url + '/shoppingData?'+params.toString())
+                let res = this.request('GET', 'http://127.0.0.1:5000/shoppingData?'+params.toString())
 
             },
             methods:{
