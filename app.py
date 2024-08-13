@@ -29,14 +29,8 @@ def auth_api():  # put application's code here
 @app.route('/data')
 def data():  # put application's code here
     region_data = request_region(request.args['regionId'])
-    print(region_data)
-
     content_data = request_content(region_data['property_ids'])
-    # print(content_data)
-
     shopping_data = request_shopping(request.args, region_data['property_ids'], region_data['country_code'])
-
-    print(shopping_data)
 
     return jsonify({'content_data':content_data, 'shopping_data':shopping_data, 'c_code':region_data['country_code']})
 
@@ -84,8 +78,6 @@ def request_content(property_ids):
                   '&include=name&include=amenities&include=ratings&include=location&include=address&include=airports&include=fees&include=descriptions&include=images' +\
                   prop_id_str
 
-    print(prop_id_str, '*'*50)
-
     headers = {
         'Authorization': auth(),
         'Content-Type': 'application/json'
@@ -115,14 +107,12 @@ def request_rooms(property_id):
 
 def request_shopping(args, property_ids, country_code, n=3):
     prop_id_str = ''
-    print(n, property_ids)
     for i in range(n):
         prop_id_str = prop_id_str + '&property_id=' + property_ids[i]
 
     shopping_url = 'https://test.ean.com/v3/properties/availability?checkin='+args.get('checkin')+'&checkout='+args.get('checkout')+\
                    '&country_code='+country_code+'&currency=USD&language=en-US&occupancy='+ args.get('occupancy') +'&rate_plan_count=1&sales_channel=website&sales_environment=hotel_only'+\
                     prop_id_str
-    print(shopping_url)
 
     headers = {
         'Authorization': auth(),
